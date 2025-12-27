@@ -1,10 +1,10 @@
 import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from dotenv import load_dotenv
+# from dotenv import load_dotenv # REMOVIDO: No necesario en Render, puede causar conflictos
 from datetime import datetime
 
-load_dotenv()
+# load_dotenv() # REMOVIDO: No necesario en Render, puede causar conflictos
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -81,15 +81,20 @@ def log_search_query(query: str, email: str, results: list):
         """)
         
         # Add email column if it doesn't exist (for existing tables)
-        cur.execute("""
-            DO $$
-            BEGIN
-                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='historial_busquedas' AND column_name='email') THEN
-                    ALTER TABLE historial_busquedas ADD COLUMN email TEXT;
-                END IF;
-            END
-            $$;
-        """)
+        try:
+            cur.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='historial_busquedas' AND column_name='email') THEN
+                        ALTER TABLE historial_busquedas ADD COLUMN email TEXT;
+                    END IF;
+                END
+                $$;
+            """)
+            conn.commit() # Commit the ALTER TABLE if successful
+        except Exception as e:
+            print(f"Advertencia: No se pudo añadir la columna 'email' a 'historial_busquedas'. Puede que ya exista o haya otro error: {e}")
+            conn.rollback() # Rollback if ALTER TABLE failed, to not block subsequent operations
         
         results_count = len(results)
         first_result_source = None

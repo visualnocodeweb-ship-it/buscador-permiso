@@ -1,12 +1,12 @@
 import os
 import gspread
 from google.oauth2.service_account import Credentials
-from dotenv import load_dotenv
+# from dotenv import load_dotenv # REMOVIDO: No necesario en Render, puede causar conflictos
 from unidecode import unidecode
 from cachetools import TTLCache, cached
 import json # Importar json para parsear la variable de entorno
 
-load_dotenv()
+# load_dotenv() # REMOVIDO: No necesario en Render, puede causar conflictos
 
 GOOGLE_SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
 # CREDENTIALS_FILE = "credentials.json" # Ya no se usa directamente
