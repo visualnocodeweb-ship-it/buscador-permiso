@@ -1,21 +1,63 @@
 import os
 import gspread
 from google.oauth2.service_account import Credentials
-# from dotenv import load_dotenv # REMOVIDO: No necesario en Render, puede causar conflictos
 from unidecode import unidecode
 from cachetools import TTLCache, cached
 import json # Importar json para parsear la variable de entorno
 
-# load_dotenv() # REMOVIDO: No necesario en Render, puede causar conflictos
-
 GOOGLE_SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
-# CREDENTIALS_FILE = "credentials.json" # Ya no se usa directamente
 SHEET_NAMES = ["permisos", "discapacidad", "permiso-de-pesca-jubilados-65-2025-12-26", "malvinas"] # User provided sheet names
 
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive.file",
 ]
+
+# Helper para normalizar headers/keys (minúsculas, sin acentos, sin caracteres especiales)
+def _normalize_key(key):
+    return unidecode(str(key).lower().replace(' ', '_').replace('.', '').replace('/', '').replace('(', '').replace(')', ''))
+
+# Mapeo de claves normalizadas a claves estándar que espera el código
+# Incluye variaciones comunes y los nombres de las columnas de PostgreSQL para consistencia
+STANDARD_KEY_MAP = {
+    _normalize_key('nombre'): 'nombre',
+    _normalize_key('nombres'): 'nombre',
+    _normalize_key('nombre_solo_nombre'): 'nombre',
+    _normalize_key('apellido'): 'apellido',
+    _normalize_key('apellidos'): 'apellido',
+    _normalize_key('dni'): 'dni',
+    _normalize_key('documento'): 'dni',
+    _normalize_key('nro_documento'): 'dni', # De PostgreSQL
+    _normalize_key('email'): 'email',
+    _normalize_key('email_address'): 'email',
+    _normalize_key('correo'): 'email',
+    _normalize_key('celular'): 'celular',
+    _normalize_key('cel'): 'celular',
+    _normalize_key('telefono'): 'celular',
+    _normalize_key('whatsapp'): 'celular',
+    _normalize_key('customer_first_name'): 'nombre', # De PostgreSQL
+    _normalize_key('customer_last_name'): 'apellido', # De PostgreSQL
+    _normalize_key('customer_email'): 'email', # De PostgreSQL
+    _normalize_key('customer_phone'): 'celular', # De PostgreSQL
+    _normalize_key('nacimiento'): 'fecha_nacimiento',
+    _normalize_key('fecha_de_nacimiento'): 'fecha_nacimiento',
+    _normalize_key('region'): 'region',
+    _normalize_key('region_pesca'): 'region', # De PostgreSQL
+    _normalize_key('line_item_name'): 'permiso', # De PostgreSQL
+    _normalize_key('status'): 'estado_permiso', # De PostgreSQL
+    _normalize_key('fecha_inicio_permiso'): 'fecha_inicio_permiso',
+    _normalize_key('fecha_de_creacion'): 'fecha_creacion', # De PostgreSQL
+    _normalize_key('date_created'): 'fecha_creacion', # De PostgreSQL
+}
+
+def get_standardized_record(raw_record):
+    standard_record = {}
+    for raw_key, value in raw_record.items():
+        normalized_key = _normalize_key(raw_key)
+        target_key = STANDARD_KEY_MAP.get(normalized_key, raw_key) # Usa la clave original si no hay mapeo estándar
+        standard_record[target_key] = value
+    return standard_record
+
 
 def get_sheets_client():
     try:
@@ -28,8 +70,8 @@ def get_sheets_client():
         else:
             # Fallback a archivo local (para desarrollo)
             # Como el proyecto está consolidado en la raíz, el archivo credentials.json se espera en la raíz o en backend/
-            # Si se espera en backend/, la ruta debe ser 'backend/credentials.json'
-            # Asumiendo que ahora está en backend/ por nuestra refactorización
+            # La ruta ahora es 'backend/credentials.json' porque el refactor movió el frontend, no el backend.
+            # Sin embargo, el archivo credentials.json está en el directorio 'backend'.
             creds = Credentials.from_service_account_file("backend/credentials.json", scopes=SCOPES)
 
         client = gspread.authorize(creds)
@@ -53,7 +95,6 @@ def test_sheets_connection():
     return None
 
 # Cache para los registros de las hojas de Google, con un TTL (Time To Live) de 10 minutos
-# Esto significa que los datos se mantendrán en memoria durante 10 minutos antes de volver a ser pedidos a Google.
 cache = TTLCache(maxsize=10, ttl=600)
 
 @cached(cache)
@@ -84,14 +125,15 @@ def search_sheets_by_name_dni(query: str):
     for sheet_name in SHEET_NAMES:
         try:
             worksheet = spreadsheet.worksheet(sheet_name)
-            # Usamos la función cacheada en lugar de la llamada directa
             records = get_sheet_records_cached(worksheet)
             
             for record in records:
-                # Asumiendo los nombres de las columnas. ¡¡¡IMPORTANTE: AJUSTAR SI SON DIFERENTES!!!
-                nombre = unidecode(str(record.get('nombre', '')).lower())
-                apellido = unidecode(str(record.get('apellido', '')).lower())
-                dni = str(record.get('dni', ''))
+                # Normaliza el registro para acceder a las claves estandarizadas
+                standard_record = get_standardized_record(record)
+
+                nombre = unidecode(str(standard_record.get('nombre', '')).lower())
+                apellido = unidecode(str(standard_record.get('apellido', '')).lower())
+                dni = str(standard_record.get('dni', ''))
 
                 match_found = False
                 if clean_query.isdigit():
@@ -104,8 +146,9 @@ def search_sheets_by_name_dni(query: str):
                         match_found = True
 
                 if match_found:
-                    record['source'] = f"Google Sheets - {sheet_name}"
-                    results.append(record)
+                    # Devuelve el registro estandarizado
+                    standard_record['source'] = f"Google Sheets - {sheet_name}"
+                    results.append(standard_record) # Añade el registro estandarizado
         except gspread.exceptions.WorksheetNotFound:
             print(f"Advertencia: Hoja '{sheet_name}' no encontrada en el Google Sheet.")
             continue
