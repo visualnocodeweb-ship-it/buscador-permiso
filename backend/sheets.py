@@ -159,6 +159,7 @@ def search_sheets_by_name_dni(query: str):
                 if match_found:
                     # Devuelve el registro estandarizado
                     standard_record['source'] = f"Google Sheets - {sheet_name}"
+                    standard_record['estado_permiso'] = 'Permiso Pago' # Hardcode 'Permiso Pago' para Google Sheets
                     results.append(standard_record) # Añade el registro estandarizado
         except gspread.exceptions.WorksheetNotFound:
             print(f"Advertencia: Hoja '{sheet_name}' no encontrada en el Google Sheet.")
