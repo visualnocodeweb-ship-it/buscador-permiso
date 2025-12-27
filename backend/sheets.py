@@ -21,12 +21,16 @@ def get_sheets_client():
     try:
         # Intentar cargar credenciales desde variable de entorno (para Render)
         google_credentials_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
+        print(f"DEBUG: Valor de GOOGLE_CREDENTIALS_JSON (primeros 50 chars): {google_credentials_json[:50] if google_credentials_json else 'None'}")
         if google_credentials_json:
             creds_info = json.loads(google_credentials_json)
             creds = Credentials.from_service_account_info(creds_info, scopes=SCOPES)
         else:
             # Fallback a archivo local (para desarrollo)
-            creds = Credentials.from_service_account_file("backend/credentials.json", scopes=SCOPES) # Ruta corregida
+            # Como el proyecto está consolidado en la raíz, el archivo credentials.json se espera en la raíz o en backend/
+            # Si se espera en backend/, la ruta debe ser 'backend/credentials.json'
+            # Asumiendo que ahora está en backend/ por nuestra refactorización
+            creds = Credentials.from_service_account_file("backend/credentials.json", scopes=SCOPES)
 
         client = gspread.authorize(creds)
         return client

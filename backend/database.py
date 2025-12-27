@@ -67,16 +67,28 @@ def log_search_query(query: str, email: str, results: list):
         conn = get_db_connection()
         cur = conn.cursor()
         
+        # Ensure table exists (initial creation)
         cur.execute("""
             CREATE TABLE IF NOT EXISTS historial_busquedas (
                 id SERIAL PRIMARY KEY,
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                email TEXT,
+                email TEXT, -- Asegúrate de que email esté aquí
                 query TEXT NOT NULL,
                 results_count INTEGER,
                 first_result_source TEXT,
                 first_result_name TEXT
             );
+        """)
+        
+        # Add email column if it doesn't exist (for existing tables)
+        cur.execute("""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='historial_busquedas' AND column_name='email') THEN
+                    ALTER TABLE historial_busquedas ADD COLUMN email TEXT;
+                END IF;
+            END
+            $$;
         """)
         
         results_count = len(results)
