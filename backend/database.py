@@ -101,9 +101,9 @@ def log_search_query(query: str, email: str, results: list):
         first_result_name = None
         if results_count > 0:
             first_result = results[0]
-            first_result_source = first_result.get('source')
-            # Adaptar al nombre real en los datos de resultado
-            first_result_name = f"{first_result.get('data', {}).get('customer_first_name', '')} {first_result.get('data', {}).get('customer_last_name', '')}".strip()
+            first_result_source = first_result.source
+            # first_result.data es un diccionario, por lo que 'get' funciona aquí
+            first_result_name = f"{first_result.data.get('customer_first_name', '')} {first_result.data.get('customer_last_name', '')}".strip()
 
         cur.execute(
             """
