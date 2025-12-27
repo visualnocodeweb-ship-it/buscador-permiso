@@ -82,9 +82,10 @@
 }
 
 .main-logo {
-  max-width: 100%;
+  width: 100px; /* Tamaño más pequeño */
   height: auto;
-  margin-bottom: 2rem;
+  display: block; /* Para que margin: auto funcione para centrar */
+  margin: 0 auto 2rem auto; /* Centrado horizontal, mantiene margen inferior */
 }
 
 .app-header {
