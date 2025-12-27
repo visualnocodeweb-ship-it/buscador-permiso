@@ -22,32 +22,37 @@ def _normalize_key(key):
 STANDARD_KEY_MAP = {
     _normalize_key('nombre'): 'nombre',
     _normalize_key('nombres'): 'nombre',
-    _normalize_key('nombre_solo_nombre'): 'nombre',
+    _normalize_key('nombre_solo_nombre'): 'nombre', # Para hojas como permiso-de-pesca-jubilados
     _normalize_key('apellido'): 'apellido',
     _normalize_key('apellidos'): 'apellido',
     _normalize_key('dni'): 'dni',
     _normalize_key('documento'): 'dni',
     _normalize_key('nro_documento'): 'dni', # De PostgreSQL
     _normalize_key('email'): 'email',
-    _normalize_key('email_address'): 'email',
+    _normalize_key('email_address'): 'email', # Para hojas como permiso-de-pesca-jubilados
     _normalize_key('correo'): 'email',
     _normalize_key('celular'): 'celular',
     _normalize_key('cel'): 'celular',
     _normalize_key('telefono'): 'celular',
-    _normalize_key('whatsapp'): 'celular',
+    _normalize_key('whatsapp'): 'celular', # Para hojas como permiso-de-pesca-jubilados
     _normalize_key('customer_first_name'): 'nombre', # De PostgreSQL
     _normalize_key('customer_last_name'): 'apellido', # De PostgreSQL
     _normalize_key('customer_email'): 'email', # De PostgreSQL
     _normalize_key('customer_phone'): 'celular', # De PostgreSQL
     _normalize_key('nacimiento'): 'fecha_nacimiento',
-    _normalize_key('fecha_de_nacimiento'): 'fecha_nacimiento',
+    _normalize_key('fecha_de_nacimiento'): 'fecha_nacimiento', # Para hojas como permiso-de-pesca-jubilados
     _normalize_key('region'): 'region',
+    _normalize_key('en_que_region_es_pescaras'): 'region', # Para hojas como permiso-de-pesca-jubilados
     _normalize_key('region_pesca'): 'region', # De PostgreSQL
+    _normalize_key('permiso'): 'permiso', # Generalizado
     _normalize_key('line_item_name'): 'permiso', # De PostgreSQL
+    _normalize_key('id_de_envio'): 'permiso', # Para hojas como permiso-de-pesca-jubilados (guess for Permiso)
     _normalize_key('status'): 'estado_permiso', # De PostgreSQL
+    _normalize_key('estado_de_envio'): 'estado_permiso', # Para hojas como permiso-de-pesca-jubilados
     _normalize_key('fecha_inicio_permiso'): 'fecha_inicio_permiso',
     _normalize_key('fecha_de_creacion'): 'fecha_creacion', # De PostgreSQL
-    _normalize_key('date_created'): 'fecha_creacion', # De PostgreSQL
+    _normalize_key('fecha_de_creacion_de_envio'): 'fecha_creacion', # Para hojas como permiso-de-pesca-jubilados
+    _normalize_key('dni_imagen_certificado'): 'imagen_certificado', # From discapacidad headers (dni/imagen certificado -> imagen_certificado)
 }
 
 def get_standardized_record(raw_record):
@@ -159,7 +164,7 @@ def search_sheets_by_name_dni(query: str):
                 if match_found:
                     # Devuelve el registro estandarizado
                     standard_record['source'] = f"Google Sheets - {sheet_name}"
-                    standard_record['estado_permiso'] = 'Permiso Pago' # Hardcode 'Permiso Pago' para Google Sheets
+                    standard_record['estado_permiso'] = 'completed' # Set status to 'completed' for all Google Sheets results
                     results.append(standard_record) # Añade el registro estandarizado
         except gspread.exceptions.WorksheetNotFound:
             print(f"Advertencia: Hoja '{sheet_name}' no encontrada en el Google Sheet.")
