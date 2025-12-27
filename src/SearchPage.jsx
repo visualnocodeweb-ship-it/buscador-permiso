@@ -4,8 +4,42 @@ function ResultsDisplay({ results }) {
     if (results.length === 0) {
       return null;
     }
+
+    const formatDate = (dateString) => {
+      if (!dateString) return 'No disponible';
+      try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) { // Check for invalid date (e.g., if dateString was not ISO)
+            // Attempt to parse YYYY-MM-DD or DD/MM/YYYY
+            const parts = dateString.split(/[-/]/); // Split by - or /
+            let parsedDate;
+            if (parts.length === 3) {
+                // If it's YYYY-MM-DD (e.g., from DB)
+                if (parts[0].length === 4) {
+                    parsedDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                } 
+                // If it's DD/MM/YYYY (common in sheets)
+                else if (parts[2].length === 4) {
+                    parsedDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                }
+            }
+            // If still invalid, try to parse as just string
+            if (!parsedDate || isNaN(parsedDate.getTime())) {
+                parsedDate = new Date(dateString);
+            }
+
+            if (parsedDate && !isNaN(parsedDate.getTime())) {
+                return parsedDate.toLocaleDateString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            }
+        } else {
+            return date.toLocaleDateString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        }
+      } catch (e) {
+        console.error("Error parsing date:", dateString, e);
+      }
+      return 'No disponible';
+    };
   
-    const renderValue = (value) => value ?? 'No disponible';
     const getPermissionStatus = (status) => {
       if (!status) return 'No disponible';
       return String(status).toLowerCase() === 'completed' ? 'Permiso Pago' : 'Permiso no pagado';
@@ -17,17 +51,17 @@ function ResultsDisplay({ results }) {
         {results.map((result, index) => (
           <div key={index} className="result-card">
             <div className="card-header">
-              <h3>{renderValue(result.data.customer_first_name)} {renderValue(result.data.customer_last_name)}</h3>
+              <h3>{result.data.nombre || 'No disponible'} {result.data.apellido || 'No disponible'}</h3>
               <span className="source-tag">{getFriendlySource(result.source)}</span>
             </div>
             <div className="card-body">
-              <p><strong>DNI:</strong> {renderValue(result.data.nro_documento)}</p>
-              <p><strong>Email:</strong> {renderValue(result.data.customer_email)}</p>
-              <p><strong>Teléfono:</strong> {renderValue(result.data.customer_phone)}</p>
-              <p><strong>Permiso:</strong> {renderValue(result.data.line_item_name)}</p>
-              <p><strong>Región de Pesca:</strong> {renderValue(result.data.region_pesca)}</p>
-              <p><strong>Fecha de Creación:</strong> {new Date(result.data.date_created).toLocaleString()}</p>
-              <p><strong>Estado:</strong> {getPermissionStatus(result.data.status)}</p>
+              <p><strong>DNI:</strong> {result.data.dni || 'No disponible'}</p>
+              <p><strong>Email:</strong> {result.data.email || 'No disponible'}</p>
+              <p><strong>Teléfono:</strong> {result.data.celular || 'No disponible'}</p>
+              <p><strong>Permiso:</strong> {result.data.permiso || 'No disponible'}</p>
+              <p><strong>Región de Pesca:</strong> {result.data.region || 'No disponible'}</p>
+              <p><strong>Fecha de Creación:</strong> {formatDate(result.data.fecha_creacion || result.data.nacimiento || result.data.fecha_inicio_permiso)}</p>
+              <p><strong>Estado:</strong> {getPermissionStatus(result.data.estado_permiso || result.data.status)}</p>
             </div>
           </div>
         ))}
