@@ -133,7 +133,7 @@ def search_sheets_by_name_dni(query: str):
         return results
 
     try:
-        spreadsheet = client.open_by_by_key(GOOGLE_SHEET_ID)
+        spreadsheet = client.open_by_key(GOOGLE_SHEET_ID)
     except Exception as e:
         print(f"Error al abrir la hoja de cálculo para buscar: {e}")
         return results
