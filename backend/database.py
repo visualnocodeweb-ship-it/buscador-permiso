@@ -67,43 +67,52 @@ def log_search_query(query: str, email: str, results: list):
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Ensure table exists (initial creation)
+        # Ensure table exists (initial creation with all columns)
         cur.execute("""
             CREATE TABLE IF NOT EXISTS historial_busquedas (
                 id SERIAL PRIMARY KEY,
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                email TEXT, -- Asegúrate de que email esté aquí
+                email TEXT,
                 query TEXT NOT NULL,
                 results_count INTEGER,
                 first_result_source TEXT,
                 first_result_name TEXT
             );
         """)
-        
-        # Add email column if it doesn't exist (for existing tables)
-        try:
-            cur.execute("""
-                DO $$
-                BEGIN
-                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='historial_busquedas' AND column_name='email') THEN
-                        ALTER TABLE historial_busquedas ADD COLUMN email TEXT;
-                    END IF;
-                END
-                $$;
-            """)
-            conn.commit() # Commit the ALTER TABLE if successful
-        except Exception as e:
-            print(f"Advertencia: No se pudo añadir la columna 'email' a 'historial_busquedas'. Puede que ya exista o haya otro error: {e}")
-            conn.rollback() # Rollback if ALTER TABLE failed, to not block subsequent operations
-        
+        conn.commit() # Commit the CREATE TABLE if it happened
+
+        # Add missing columns if they don't exist
+        columns_to_add = {
+            "email": "TEXT",
+            "results_count": "INTEGER",
+            "first_result_source": "TEXT",
+            "first_result_name": "TEXT"
+        }
+
+        for col_name, col_type in columns_to_add.items():
+            try:
+                cur.execute(f"""
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='historial_busquedas' AND column_name='{col_name}') THEN
+                            ALTER TABLE historial_busquedas ADD COLUMN {col_name} {col_type};
+                        END IF;
+                    END
+                    $$;
+                """)
+                conn.commit()
+            except Exception as e:
+                print(f"Advertencia: No se pudo añadir la columna '{col_name}' a 'historial_busquedas'. Puede que ya exista o haya otro error: {e}")
+                conn.rollback() # Rollback if ALTER TABLE failed, but continue
+
         results_count = len(results)
         first_result_source = None
         first_result_name = None
         if results_count > 0:
             first_result = results[0]
             first_result_source = first_result.source
-            # first_result.data es un diccionario, por lo que 'get' funciona aquí
-            first_result_name = f"{first_result.data.get('customer_first_name', '')} {first_result.data.get('customer_last_name', '')}".strip()
+            # Utilizar 'nombre' y 'apellido' que ya vienen estandarizados
+            first_result_name = f"{first_result.data.get('nombre', '')} {first_result.data.get('apellido', '')}".strip()
 
         cur.execute(
             """
