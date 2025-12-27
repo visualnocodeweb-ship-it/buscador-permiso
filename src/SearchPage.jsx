@@ -42,7 +42,7 @@ function ResultsDisplay({ results }) {
   
     const getPermissionStatus = (status) => {
       if (!status) return 'No disponible';
-      return String(status).toLowerCase() === 'completed' ? 'Permiso Pago' : 'Permiso no pagado';
+      return String(status).toLowerCase() === 'completed' ? 'Permiso Válido' : 'Permiso no pagado';
     };
     const getFriendlySource = (source) => source === 'PostgreSQL' ? 'Base de Datos' : source;
   
