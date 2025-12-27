@@ -22,7 +22,6 @@ def test_db_connection():
 
 def search_by_name_dni(query: str):
     results = []
-    # Limpiar el query
     clean_query = query.strip()
     if not clean_query:
         return results
@@ -34,24 +33,28 @@ def search_by_name_dni(query: str):
         # Habilitar la extensión unaccent si no existe
         cur.execute("CREATE EXTENSION IF NOT EXISTS unaccent;")
 
-        # Determinar si la búsqueda es por DNI o por nombre/apellido
-        if clean_query.isdigit():
-            # Búsqueda por DNI (generalmente no necesita unaccent)
-            sql = "SELECT * FROM orders WHERE nro_documento LIKE %s LIMIT 50;"
-            params = (f"%{clean_query}%",)
-        else:
-            # Búsqueda por nombre y apellido insensible a acentos y mayúsculas
+        search_conditions = []
+        params_list = []
+
+        # Condición para buscar en nro_documento (siempre se incluye si hay query)
+        search_conditions.append("nro_documento ILIKE %s") # ILIKE para insensible a mayúsculas/minúsculas
+        params_list.append(f"%{clean_query}%")
+
+        # Si la query no es puramente numérica (ej. "Pasaporte A123"), también buscar en nombres
+        if not clean_query.isdigit():
             search_terms = clean_query.lower().split()
-            
-            name_conditions = []
-            params_list = []
+            name_sub_conditions = []
             for term in search_terms:
-                # Usamos unaccent en la base de datos y pasamos el término de búsqueda ya procesado
-                name_conditions.append("(unaccent(LOWER(customer_first_name)) LIKE unaccent(%s) OR unaccent(LOWER(customer_last_name)) LIKE unaccent(%s))")
+                name_sub_conditions.append("(unaccent(LOWER(customer_first_name)) ILIKE unaccent(%s) OR unaccent(LOWER(customer_last_name)) ILIKE unaccent(%s))")
                 params_list.extend([f"%{term}%", f"%{term}%"])
-            
-            sql = f"SELECT * FROM orders WHERE {' AND '.join(name_conditions)} LIMIT 50;"
-            params = tuple(params_list)
+            if name_sub_conditions:
+                search_conditions.append(f"({' AND '.join(name_sub_conditions)})")
+
+        if not search_conditions:
+            return results # No debería ocurrir si clean_query no está vacío
+        
+        sql = f"SELECT * FROM orders WHERE {' OR '.join(search_conditions)} LIMIT 50;"
+        params = tuple(params_list)
 
         cur.execute(sql, params)
         results = cur.fetchall()
