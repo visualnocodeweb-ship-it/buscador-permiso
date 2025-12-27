@@ -65,11 +65,14 @@ async def search_data(request: SearchRequest):
     # Search in PostgreSQL
     db_results = database.search_by_name_dni(query)
     for res in db_results:
-        all_results.append(SearchResult(source="PostgreSQL", data=res))
+        # Estandarizar los resultados de PostgreSQL antes de añadirlos
+        standard_res = sheets.get_standardized_record(res)
+        all_results.append(SearchResult(source="PostgreSQL", data=standard_res))
 
-    # Search in Google Sheets
+    # Search in Google Sheets (ya devuelve resultados estandarizados)
     sheets_results = sheets.search_sheets_by_name_dni(query)
     for res in sheets_results:
+        # sheets_results ya están estandarizados
         all_results.append(SearchResult(source="Google Sheets", data=res))
     
     # Log the search query after getting results
