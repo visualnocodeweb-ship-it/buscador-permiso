@@ -133,7 +133,7 @@ def search_sheets_by_name_dni(query: str):
         return results
 
     try:
-        spreadsheet = client.open_by_key(GOOGLE_SHEET_ID)
+        spreadsheet = client.open_by_by_key(GOOGLE_SHEET_ID)
     except Exception as e:
         print(f"Error al abrir la hoja de cálculo para buscar: {e}")
         return results
@@ -165,6 +165,7 @@ def search_sheets_by_name_dni(query: str):
                     # Devuelve el registro estandarizado
                     standard_record['source'] = f"Google Sheets - {sheet_name}"
                     standard_record['estado_permiso'] = 'completed' # Set status to 'completed' for all Google Sheets results
+                    standard_record['permiso'] = 'Solicitud de permiso de pesca para jubilados mayores de 65 años, niños menores de 12 años y Discapacidad.' # Hardcode the specific permission string
                     results.append(standard_record) # Añade el registro estandarizado
         except gspread.exceptions.WorksheetNotFound:
             print(f"Advertencia: Hoja '{sheet_name}' no encontrada en el Google Sheet.")
