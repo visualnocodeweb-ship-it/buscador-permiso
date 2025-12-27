@@ -61,21 +61,32 @@ def get_standardized_record(raw_record):
 
 def get_sheets_client():
     try:
-        # Intentar cargar credenciales desde variable de entorno (para Render)
-        google_credentials_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
-        print(f"DEBUG: Valor de GOOGLE_CREDENTIALS_JSON (primeros 50 chars): {google_credentials_json[:50] if google_credentials_json else 'None'}")
-        if google_credentials_json:
-            creds_info = json.loads(google_credentials_json)
-            creds = Credentials.from_service_account_info(creds_info, scopes=SCOPES)
+        creds = None
+        # Opcion 1: Cargar desde un Secret File de Render (ruta estándar)
+        secret_file_path = "/etc/secrets/credentials.json"
+        if os.path.exists(secret_file_path):
+            print(f"DEBUG: Cargando credenciales desde archivo secreto de Render: {secret_file_path}")
+            creds = Credentials.from_service_account_file(secret_file_path, scopes=SCOPES)
         else:
-            # Fallback a archivo local (para desarrollo)
-            # Como el proyecto está consolidado en la raíz, el archivo credentials.json se espera en la raíz o en backend/
-            # La ruta ahora es 'backend/credentials.json' porque el refactor movió el frontend, no el backend.
-            # Sin embargo, el archivo credentials.json está en el directorio 'backend'.
-            creds = Credentials.from_service_account_file("backend/credentials.json", scopes=SCOPES)
+            # Opcion 2: Cargar desde variable de entorno (para Render como fallback o si el archivo no se usa)
+            google_credentials_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
+            # print(f"DEBUG: Valor de GOOGLE_CREDENTIALS_JSON (primeros 50 chars): {google_credentials_json[:50] if google_credentials_json else 'None'}") # Eliminado
+            if google_credentials_json:
+                print("DEBUG: Cargando credenciales desde variable de entorno GOOGLE_CREDENTIALS_JSON")
+                creds_info = json.loads(google_credentials_json)
+                creds = Credentials.from_service_account_info(creds_info, scopes=SCOPES)
+            else:
+                # Opcion 3: Fallback a archivo local (para desarrollo)
+                # La ruta es 'backend/credentials.json'
+                print("DEBUG: Cargando credenciales desde archivo local backend/credentials.json")
+                creds = Credentials.from_service_account_file("backend/credentials.json", scopes=SCOPES)
 
-        client = gspread.authorize(creds)
-        return client
+        if creds:
+            client = gspread.authorize(creds)
+            return client
+        else:
+            print("ERROR: No se pudieron encontrar credenciales para Google Sheets.")
+            return None
     except Exception as e:
         print(f"Error de autenticación con Google: {e}")
         return None
