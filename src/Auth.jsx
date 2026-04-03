@@ -1,36 +1,17 @@
 import { useState } from 'react';
-import { supabase } from './supabaseClient';
 
-export default function Auth() {
+export default function Auth({ onLogin }) {
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState('');
 
-    const handleLogin = async (e) => {
+    const handleLogin = (e) => {
         e.preventDefault();
         setLoading(true);
-        try {
-            const { error } = await supabase.auth.signInWithOtp({ email });
-            if (error) throw error;
-            alert('¡Revisa tu correo para el enlace de inicio de sesión!');
-        } catch (error) {
-            alert(error.error_description || error.message);
-        } finally {
+        // Simulate a short loading time for better UX
+        setTimeout(() => {
+            onLogin(email);
             setLoading(false);
-        }
-    };
-
-    const handleGoogleLogin = async () => {
-        setLoading(true);
-        try {
-            const { error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-            });
-            if (error) throw error;
-        } catch (error) {
-            alert(error.error_description || error.message);
-        } finally {
-            setLoading(false);
-        }
+        }, 500);
     };
 
     return (
@@ -38,7 +19,7 @@ export default function Auth() {
             <div className="auth-card">
                 <img src="/Captura de pantalla 2025-10-13 021011.png" alt="Logo" className="auth-logo" />
                 <h2>Buscador de Permisos</h2>
-                <p className="auth-subtitle">Inicia sesión para continuar</p>
+                <p className="auth-subtitle">Ingresa tu correo para continuar</p>
 
                 {loading ? (
                     <div className="loader">Cargando...</div>
@@ -55,24 +36,9 @@ export default function Auth() {
                                 required
                             />
                             <button className="auth-button" type="submit" disabled={loading}>
-                                Enviar enlace mágico
+                                Ingresar
                             </button>
                         </form>
-
-                        <div className="auth-divider">
-                            <span>o</span>
-                        </div>
-
-                        <button
-                            className="auth-button google"
-                            onClick={handleGoogleLogin}
-                            disabled={loading}
-                        >
-                            Iniciar sesión con Google
-                        </button>
-                        <p className="auth-reminder">
-                            (Recuerda configurar el proveedor de Google en Supabase.)
-                        </p>
                     </>
                 )}
             </div>

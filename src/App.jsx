@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { supabase } from './supabaseClient';
 import { Routes, Route, Link, Navigate } from 'react-router-dom';
 import './App.css';
 
@@ -21,18 +20,22 @@ function App() {
     const [isNavOpen, setIsNavOpen] = useState(false);
 
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-        });
-
-        const {
-            data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session);
-        });
-
-        return () => subscription.unsubscribe();
+        const savedEmail = localStorage.getItem('userEmail');
+        if (savedEmail) {
+            setSession({ user: { email: savedEmail } });
+        }
     }, []);
+
+    const handleLogin = (email) => {
+        localStorage.setItem('userEmail', email);
+        setSession({ user: { email } });
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('userEmail');
+        setSession(null);
+        setIsNavOpen(false);
+    };
 
     return (
         <div>
@@ -49,10 +52,7 @@ function App() {
                     <div className={`nav-links ${isNavOpen ? 'open' : ''}`}>
                         <Link to="/admin" onClick={() => setIsNavOpen(false)}>Admin</Link>
                         <span>{session.user.email}</span>
-                        <button onClick={() => {
-                            supabase.auth.signOut();
-                            setIsNavOpen(false);
-                        }}>Cerrar Sesión</button>
+                        <button onClick={handleLogout}>Cerrar Sesión</button>
                     </div>
                 </nav>
             )}
@@ -69,7 +69,7 @@ function App() {
                     />
                     <Route
                         path="/"
-                        element={!session ? <Auth /> : <SearchPage session={session} />}
+                        element={!session ? <Auth onLogin={handleLogin} /> : <SearchPage session={session} />}
                     />
                     <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
