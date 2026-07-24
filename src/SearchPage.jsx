@@ -70,6 +70,28 @@ function ResultsDisplay({ results }) {
     );
   }
 
+function SearchLoadingCard() {
+    return (
+      <div className="search-loading" role="status" aria-live="polite" aria-busy="true">
+        <div className="search-loading-orb" aria-hidden="true">
+          <span className="search-loading-ring" />
+          <span className="search-loading-core" />
+          <span className="search-loading-pulse" />
+        </div>
+        <div className="search-loading-copy">
+          <p className="search-loading-eyebrow">Cargando</p>
+          <h3 className="search-loading-title">Consultando Base de Datos de Pesca NQN</h3>
+          <p className="search-loading-subtitle">
+            Un agente de IA se encuentra consultando los registros. Esto puede demorar unos segundos.
+          </p>
+          <div className="search-loading-dots" aria-hidden="true">
+            <span /><span /><span />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 function SearchPage({ session }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [results, setResults] = useState([]);
@@ -131,14 +153,15 @@ function SearchPage({ session }) {
               disabled={loading}
             />
             <button type="submit" disabled={loading}>
-              {loading ? 'Buscando...' : 'Buscar'}
+              {loading ? 'Consultando...' : 'Buscar'}
             </button>
           </form>
   
-          {message && <p className="message">{message}</p>}
+          {loading && <SearchLoadingCard />}
+          {message && !loading && <p className="message">{message}</p>}
         </div>
   
-        <ResultsDisplay results={results} />
+        {!loading && <ResultsDisplay results={results} />}
       </div>
     );
   }
