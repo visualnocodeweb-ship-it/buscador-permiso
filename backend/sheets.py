@@ -52,6 +52,8 @@ STANDARD_KEY_MAP = {
     _normalize_key('fecha_inicio_permiso'): 'fecha_inicio_permiso',
     _normalize_key('fecha_de_creacion'): 'fecha_creacion', # De PostgreSQL
     _normalize_key('fecha_de_creacion_de_envio'): 'fecha_creacion', # Para hojas como permiso-de-pesca-jubilados
+    _normalize_key('date_created'): 'fecha_creacion', # De PostgreSQL / WooCommerce
+    _normalize_key('date_modified'): 'fecha_modificacion',
     _normalize_key('dni_imagen_certificado'): 'imagen_certificado', # From discapacidad headers (dni/imagen certificado -> imagen_certificado)
 }
 

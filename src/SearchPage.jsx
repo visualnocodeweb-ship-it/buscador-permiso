@@ -60,7 +60,8 @@ function ResultsDisplay({ results }) {
               <p><strong>Teléfono:</strong> {result.data.celular || 'No disponible'}</p>
               <p><strong>Permiso:</strong> {result.data.permiso || 'No disponible'}</p>
               <p><strong>Región de Pesca:</strong> {result.data.region || 'No disponible'}</p>
-              <p><strong>Fecha de Creación:</strong> {formatDate(result.data.fecha_creacion || result.data.nacimiento || result.data.fecha_inicio_permiso)}</p>
+              <p><strong>Fecha de solicitud:</strong> {formatDate(result.data.fecha_creacion || result.data.date_created)}</p>
+              <p><strong>Fecha del permiso:</strong> {formatDate(result.data.fecha_inicio_permiso || result.data.fecha_creacion || result.data.date_created)}</p>
               <p><strong>Estado:</strong> {getPermissionStatus(result.data.estado_permiso || result.data.status)}</p>
             </div>
           </div>
